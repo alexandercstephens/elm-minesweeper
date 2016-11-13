@@ -62,7 +62,12 @@ update msg model =
       ( if (inCoordinateList x' y' model.explored) then
           model
         else
-          { model | explored = model.explored ++ [{ x = x', y = y' }] }
+          { model |
+            explored = model.explored ++
+              List.map
+              (\(x, y) -> {x=x, y=y})
+              (spacesToExplore [(x', y')] model.bombs model.explored)
+          }
       , if (inCoordinateList x' y' model.bombs) then
           Cmd.none -- TODO lose
         else
@@ -74,6 +79,47 @@ inCoordinateList x' y' coordinateList =
   case (List.filter (\{x, y} -> x==x' && y==y') coordinateList) of
     [] -> False
     otherwise -> True
+
+-- input: tuple
+-- output: list of tuples surrounding that tuple, within the board
+surroundingSpaces : (Int, Int) -> List (Int, Int)
+surroundingSpaces (x, y) =
+    List.filter (\(x, y) -> (x >= 0) && (x < boardSize) && (y >= 0) && (y < boardSize))
+        [ (x - 1, y - 1)
+        , (x - 1, y    )
+        , (x - 1, y + 1)
+        , (x    , y - 1)
+        , (x    , y + 1)
+        , (x + 1, y - 1)
+        , (x + 1, y    )
+        , (x + 1, y + 1)
+        ]
+
+-- returns the number of bombs surrounding this coordinate
+dangerFactor : Int -> Int -> List { a | x: Int, y: Int } -> Int
+dangerFactor x y bombs =
+    List.length
+      (List.filter
+        (\(x, y) -> inCoordinateList x y bombs)
+        (surroundingSpaces (x, y))
+      )
+
+spacesToExplore : List (Int, Int) -> List { x: Int, y: Int } -> List { x: Int, y: Int } -> List (Int, Int)
+spacesToExplore toExplore bombs explored =
+  case toExplore of
+    [] -> []
+    ((x, y)::xys) ->
+      --if already explored, ignore
+      if inCoordinateList x y explored then
+          spacesToExplore xys bombs explored
+
+      --if no surrounding bombs, explore and explore surrounding spaces too
+      else if dangerFactor x y bombs == 0 then
+          (x, y)::(spacesToExplore (xys ++ surroundingSpaces (x, y)) bombs ({x=x, y=y}::explored))
+
+      --otherwise, just explore this space
+      else
+          (x, y)::(spacesToExplore xys bombs ({x=x, y=y}::explored))
 
 
 -- SUBSCRIPTIONS
@@ -104,7 +150,7 @@ bombView model x y =
     [ if (inCoordinateList x y model.bombs) then 
         text "b" 
       else 
-        text (toString (dangerFactor model x y))
+        text (toString (dangerFactor x y model.bombs ))
     ] 
   else 
     div 
@@ -142,24 +188,8 @@ bomb =
   [ ("background-color", "blue")
   ]
 
--- returns the number of bombs surrounding this coordinate
-dangerFactor : Model -> Int -> Int -> Int
-dangerFactor model x y =
-  List.length 
-  ( List.filter (\b -> b) 
-      [ inCoordinateList (x-1) (y-1) model.bombs
-      , inCoordinateList (x-1) (y)   model.bombs
-      , inCoordinateList (x-1) (y+1) model.bombs
-      , inCoordinateList (x)   (y-1) model.bombs
-      , inCoordinateList (x)   (y+1) model.bombs
-      , inCoordinateList (x+1) (y-1) model.bombs
-      , inCoordinateList (x+1) (y)   model.bombs
-      , inCoordinateList (x+1) (y+1) model.bombs
-      ]
-  )
-
 px : Int -> String
 px x = (toString x) ++ "px"
 
 square : Int -> List (String, String)
-square x = [("width", px x), ("height", px x)]  
+square x = [("width", px x), ("height", px x)]
