@@ -183,6 +183,7 @@ bombStyle =
 unexplored : List (String, String)
 unexplored = 
   [ ("background-color", "gray")
+  , ("box-shadow", "inset -1px -1px #666")
   ]
 explored : List (String, String)
 explored = 
