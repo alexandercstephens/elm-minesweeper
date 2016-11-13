@@ -150,7 +150,13 @@ bombView model x y =
     [ if (inCoordinateList x y model.bombs) then 
         text "b" 
       else 
-        text (toString (dangerFactor x y model.bombs ))
+        let
+          df = dangerFactor x y model.bombs
+        in
+          if df == 0 then
+            text ""
+          else
+            text (toString (df))
     ] 
   else 
     div 
