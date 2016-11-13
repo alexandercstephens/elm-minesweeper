@@ -23,7 +23,7 @@ numBombs : Int
 numBombs = 20
 
 squareSize : Int
-squareSize = 20
+squareSize = 25
 
 type alias Model = 
   { bombs: List { x : Int, y : Int }
@@ -136,7 +136,7 @@ view model =
   
 bombRowView : Model -> Int -> Html Msg
 bombRowView model x =
-  div [ style [("height", px squareSize), ("margin", (px 2) ++ " 0")] ] (List.indexedMap (bombView model) (List.repeat boardSize x))
+  div [ style [("height", px squareSize)] ] (List.indexedMap (bombView model) (List.repeat boardSize x))
   
 bombView : Model -> Int -> Int -> Html Msg
 bombView model x y = 
@@ -172,7 +172,6 @@ bombStyle : List (String, String)
 bombStyle = 
   List.concat
     [ [ ("display", "inline-block")
-      , ("border", "1px solid black")
       , ("background-color", "gray")
       , ("vertical-align", "top")
       , ("text-align", "center")
@@ -183,12 +182,12 @@ bombStyle =
 unexplored : List (String, String)
 unexplored = 
   [ ("background-color", "gray")
-  , ("box-shadow", "inset -1px -1px #666")
+  , ("box-shadow", "inset -2px -2px #333, inset 2px 2px #ccc")
   ]
 explored : List (String, String)
 explored = 
   [ ("background-color", "white")
-  , ("box-shadow", "inset 1px 1px #ccc")
+  , ("box-shadow", "inset 0 0 0 1px #eee")
   ]
 
 bomb : List (String, String)
