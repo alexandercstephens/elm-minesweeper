@@ -188,6 +188,7 @@ unexplored =
 explored : List (String, String)
 explored = 
   [ ("background-color", "white")
+  , ("box-shadow", "inset 1px 1px #ccc")
   ]
 
 bomb : List (String, String)
