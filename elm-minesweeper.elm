@@ -148,7 +148,7 @@ bombView model x y =
       ])
     , onClick (Explore x y)] 
     [ if (inCoordinateList x y model.bombs) then 
-        text "b" 
+        text "*" 
       else 
         let
           df = dangerFactor x y model.bombs
