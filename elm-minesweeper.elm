@@ -132,44 +132,77 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-  div [ style [("position", "absolute"), ("left", px 20), ("top", px 10)] ] (List.map (bombRowView model) [0..(boardSize - 1)])
-  
-bombRowView : Model -> Int -> Html Msg
-bombRowView model x =
-  div [ style [("height", px squareSize)] ] (List.indexedMap (bombView model) (List.repeat boardSize x))
-  
-bombView : Model -> Int -> Int -> Html Msg
-bombView model x y = 
-  if (inCoordinateList x y model.explored) then 
+  let
+    lost = List.any (\{x, y} -> inCoordinateList x y model.bombs) model.explored
+  in
     div 
-    [ style (List.concat 
-      [ bombStyle
-      , explored
-      ])
-    , onClick (Explore x y)] 
-    [ if (inCoordinateList x y model.bombs) then 
-        text "*" 
-      else 
-        let
-          df = dangerFactor x y model.bombs
-        in
-          if df == 0 then
-            text ""
-          else
-            text (toString (df))
-    ] 
-  else 
-    div 
-    [ style (List.concat 
-      [ bombStyle
-      , unexplored
-      ])
-    , onClick (Explore x y)] 
+      [ style [("position", "absolute"), ("left", px 20), ("top", px 10)] ]
+      (List.map (rowView model lost) [0..(boardSize - 1)])
+
+rowView : Model -> Bool -> Int -> Html Msg
+rowView model lost x =
+  div
+    [ style [("height", px squareSize)] ]
+    (List.indexedMap (tileView model lost) (List.repeat boardSize x))
+  
+tileView : Model -> Bool -> Int -> Int -> Html Msg
+tileView model lost x y =
+  if (inCoordinateList x y model.explored) then
+    if inCoordinateList x y model.bombs then
+      exploredBombView True
+    else
+      exploredTileView (dangerFactor x y model.bombs)
+  else
+    if inCoordinateList x y model.bombs && lost then
+      exploredBombView False
+    else
+      unexploredTileView lost x y
+
+exploredTileView: Int -> Html Msg
+exploredTileView df =
+  div
+    [ style
+      ( tileStyle
+      ++ explored
+      )
+    ]
+    [ if df == 0 then
+        text ""
+      else
+        text (toString (df))
+    ]
+
+exploredBombView: Bool -> Html Msg
+exploredBombView exploded =
+  div
+    [ style
+      ( tileStyle
+      ++ explored
+      ++ if exploded then
+          [("background-color", "red")]
+        else
+          []
+      )
+    ]
+    [ text "*" ]
+
+unexploredTileView: Bool -> Int -> Int -> Html Msg
+unexploredTileView lost x y =
+  div
+    ( [ style
+        ( tileStyle
+        ++ unexplored
+        )
+      ]
+    ++ if not lost then
+        [onClick (Explore x y)]
+      else
+        []
+    )
     [ ]
-  
-    
-bombStyle : List (String, String)
-bombStyle = 
+
+tileStyle : List (String, String)
+tileStyle =
   List.concat
     [ [ ("display", "inline-block")
       , ("background-color", "gray")
