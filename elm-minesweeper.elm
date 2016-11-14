@@ -76,33 +76,31 @@ update msg model =
 
 inCoordinateList : Int -> Int -> List { a | x : Int, y : Int } -> Bool
 inCoordinateList x' y' coordinateList =
-  case (List.filter (\{x, y} -> x==x' && y==y') coordinateList) of
-    [] -> False
-    otherwise -> True
+  List.any (\{x, y} -> x==x' && y==y') coordinateList
 
 -- input: tuple
 -- output: list of tuples surrounding that tuple, within the board
 surroundingSpaces : (Int, Int) -> List (Int, Int)
 surroundingSpaces (x, y) =
-    List.filter (\(x, y) -> (x >= 0) && (x < boardSize) && (y >= 0) && (y < boardSize))
-        [ (x - 1, y - 1)
-        , (x - 1, y    )
-        , (x - 1, y + 1)
-        , (x    , y - 1)
-        , (x    , y + 1)
-        , (x + 1, y - 1)
-        , (x + 1, y    )
-        , (x + 1, y + 1)
-        ]
+  List.filter (\(x, y) -> (x >= 0) && (x < boardSize) && (y >= 0) && (y < boardSize))
+    [ (x - 1, y - 1)
+    , (x - 1, y    )
+    , (x - 1, y + 1)
+    , (x    , y - 1)
+    , (x    , y + 1)
+    , (x + 1, y - 1)
+    , (x + 1, y    )
+    , (x + 1, y + 1)
+    ]
 
 -- returns the number of bombs surrounding this coordinate
 dangerFactor : Int -> Int -> List { a | x: Int, y: Int } -> Int
 dangerFactor x y bombs =
-    List.length
-      (List.filter
-        (\(x, y) -> inCoordinateList x y bombs)
-        (surroundingSpaces (x, y))
-      )
+  List.length
+    (List.filter
+      (\(x, y) -> inCoordinateList x y bombs)
+      (surroundingSpaces (x, y))
+    )
 
 spacesToExplore : List (Int, Int) -> List { x: Int, y: Int } -> List { x: Int, y: Int } -> List (Int, Int)
 spacesToExplore toExplore bombs explored =
