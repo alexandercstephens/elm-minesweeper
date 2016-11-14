@@ -1,0 +1,9 @@
+{
+  "private": "true",
+  "name": "elm-minesweeper",
+  "version": "0.1.0",
+  "description": "clone of Minesweeper in Elm",
+  "dependencies": {
+    "elm": "^0.18.0"
+  }
+}
