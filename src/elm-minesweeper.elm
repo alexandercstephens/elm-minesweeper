@@ -140,7 +140,7 @@ view model =
           [ onClick GenerateBoard ]
           [ button [ style resetButtonStyle, class (lost ? ("fa fa-frown-o", "fa fa-smile-o"))] [] ]
       , div
-          [ style [("position", "absolute"), ("left", px 20), ("top", px 40)] ]
+          [ style [("position", "absolute"), ("left", px 20), ("top", px 40), ("overflow", "hidden")] ]
           (List.map (rowView model lost) [0..(boardSize - 1)])
       ]
 
