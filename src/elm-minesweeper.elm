@@ -22,7 +22,7 @@ boardSize : Int
 boardSize = 10
 
 numBombs : Int
-numBombs = 20
+numBombs = 12
 
 squareSize : Int
 squareSize = 25
