@@ -168,7 +168,7 @@ exploredTileView df =
   div
     [ style
       ( tileStyle
-      ++ explored
+      ++ exploredStyle
       )
     ]
     [ if df == 0 then
@@ -182,7 +182,7 @@ exploredBombView exploded =
   div
     [ style
       ( tileStyle
-      ++ explored
+      ++ exploredStyle
       ++ if exploded then
           [("background-color", "red")]
         else
@@ -196,7 +196,7 @@ unexploredTileView lost x y =
   div
     ( [ style
         ( tileStyle
-        ++ unexplored
+        ++ unexploredStyle
         )
       ]
     ++ if not lost then
@@ -217,13 +217,13 @@ tileStyle =
     , square squareSize
     ]
 
-unexplored : List (String, String)
-unexplored = 
+unexploredStyle : List (String, String)
+unexploredStyle =
   [ ("background-color", "gray")
   , ("box-shadow", "inset -2px -2px #333, inset 2px 2px #ccc")
   ]
-explored : List (String, String)
-explored = 
+exploredStyle : List (String, String)
+exploredStyle =
   [ ("background-color", "white")
   , ("box-shadow", "inset 0 0 0 1px #eee")
   ]
