@@ -133,7 +133,7 @@ view model =
   let
     lost = List.any (\{x, y} -> inCoordinateList x y model.bombs) model.explored
   in
-    div 
+    div
       [ style [("position", "absolute"), ("left", px 20), ("top", px 10)] ]
       (List.map (rowView model lost) [0..(boardSize - 1)])
 

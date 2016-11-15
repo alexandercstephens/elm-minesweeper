@@ -3,7 +3,17 @@
   "name": "elm-minesweeper",
   "version": "0.1.0",
   "description": "clone of Minesweeper in Elm",
+  "scripts": {
+    "gulp": "gulp"
+  },
   "dependencies": {
-    "elm": "^0.18.0"
+    "elm": "^0.17.1"
+  },
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-connect": "^4.0.0",
+    "gulp-elm": "^0.4.4",
+    "gulp-plumber": "^1.1.0",
+    "gulp-util": "^3.0.7"
   }
 }
