@@ -1,6 +1,6 @@
 import Html exposing (Html, button, div, text, span)
 import Html.App as App
-import Html.Attributes exposing (style)
+import Html.Attributes exposing (style, class)
 import Html.Events exposing (onClick)
 import Random
 
@@ -12,6 +12,8 @@ main =
     , update = update 
     , subscriptions = subscriptions
     }
+
+(?) b (x, y) = if b then x else y
 
 
 -- MODEL
@@ -133,9 +135,14 @@ view model =
   let
     lost = List.any (\{x, y} -> inCoordinateList x y model.bombs) model.explored
   in
-    div
-      [ style [("position", "absolute"), ("left", px 20), ("top", px 10)] ]
-      (List.map (rowView model lost) [0..(boardSize - 1)])
+    div []
+      [ div
+          [ onClick GenerateBoard ]
+          [ button [ style resetButtonStyle, class (lost ? ("fa fa-frown-o", "fa fa-smile-o"))] [] ]
+      , div
+          [ style [("position", "absolute"), ("left", px 20), ("top", px 40)] ]
+          (List.map (rowView model lost) [0..(boardSize - 1)])
+      ]
 
 rowView : Model -> Bool -> Int -> Html Msg
 rowView model lost x =
@@ -221,9 +228,13 @@ explored =
   , ("box-shadow", "inset 0 0 0 1px #eee")
   ]
 
-bomb : List (String, String)
-bomb =
-  [ ("background-color", "blue")
+resetButtonStyle : List (String, String)
+resetButtonStyle =
+  [ ("background-color", "lightgray")
+  , ("padding", "4px")
+  , ("border-radius", "2px")
+  , ("position", "absolute")
+  , ("left", px (9 + squareSize * boardSize // 2))
   ]
 
 px : Int -> String
