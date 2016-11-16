@@ -3,6 +3,7 @@ import Html.App as App
 import Html.Attributes exposing (style, class)
 import Html.Events exposing (onClick)
 import Random
+import Time exposing (Time, second)
 
 
 main =
@@ -28,7 +29,8 @@ squareSize : Int
 squareSize = 25
 
 type alias Model = 
-  { bombs: List { x : Int, y : Int }
+  { time: Time
+  , bombs: List { x : Int, y : Int }
   , explored: List { x : Int, y : Int }
   }
 
@@ -37,7 +39,8 @@ generateBomb n = { x = n // boardSize, y = n % boardSize }
 
 init : (Model, Cmd Msg)
 init =
-  ( { bombs = []
+  ( { time = 0
+    , bombs = []
     , explored = []
     }
   , Random.generate InitBoard 
@@ -48,7 +51,7 @@ init =
 
 -- UPDATE
 
-type Msg = GenerateBoard | InitBoard (List { x : Int, y : Int }) | Explore Int Int
+type Msg = GenerateBoard | InitBoard (List { x : Int, y : Int }) | Explore Int Int | Tick
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -58,7 +61,8 @@ update msg model =
       
     InitBoard n ->
       ( { model | bombs = n }
-      , Cmd.none)
+      , Cmd.none
+      )
 
     Explore x' y' ->
       ( if (inCoordinateList x' y' model.explored) then
@@ -74,6 +78,12 @@ update msg model =
           Cmd.none -- TODO lose
         else
           Cmd.none)
+
+    Tick ->
+      ( { model | time = model.time + 1 }
+      , Cmd.none
+      )
+
 
 
 inCoordinateList : Int -> Int -> List { a | x : Int, y : Int } -> Bool
@@ -125,7 +135,7 @@ spacesToExplore toExplore bombs explored =
 -- SUBSCRIPTIONS
 subscriptions : Model -> Sub Msg
 subscriptions model =
-  Sub.none
+  Time.every second (\_ -> Tick)
 
 
 -- VIEW
@@ -137,6 +147,9 @@ view model =
   in
     div []
       [ div
+          [ style [("position", "absolute"), ("left", px (squareSize * boardSize - 20)), ("line-height", px 28)] ]
+          [ text (toString model.time) ]
+      , div
           [ onClick GenerateBoard ]
           [ button [ style resetButtonStyle, class (lost ? ("fa fa-frown-o", "fa fa-smile-o"))] [] ]
       , div
