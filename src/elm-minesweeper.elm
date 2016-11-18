@@ -81,10 +81,7 @@ update msg model =
             explored = model.explored ++
               (spacesToExplore [location] model.bombs model.explored)
           }
-      , if (location `List.member` model.bombs) then
-          Cmd.none -- TODO lose
-        else
-          Cmd.none
+      , Cmd.none
       )
 
     ToggleFlag location ->
