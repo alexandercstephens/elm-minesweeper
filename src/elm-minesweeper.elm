@@ -1,3 +1,4 @@
+import List.Extra exposing (unique)
 import Html exposing (Html, button, div, text, span)
 import Html.App as App
 import Html.Attributes exposing (style, class)
@@ -69,7 +70,7 @@ update msg model =
       init
       
     InitBoard n ->
-      ( { model | bombs = n }
+      ( { model | bombs = unique n }
       , Cmd.none
       )
 
@@ -155,6 +156,10 @@ onRightClick message =
     }
     (Json.succeed message)
 
+remainingBombCount : Model -> Int
+remainingBombCount model =
+  List.length model.bombs - List.length model.flagged
+
 view : Model -> Html Msg
 view model =
   let
@@ -162,6 +167,9 @@ view model =
   in
     div []
       [ div
+          [ style [("position", "absolute"), ("left", px 45), ("line-height", px 28)] ]
+          [ text (toString (remainingBombCount model)) ]
+      , div
           [ style [("position", "absolute"), ("left", px (squareSize * boardSize - 20)), ("line-height", px 28)] ]
           [ text (toString model.time) ]
       , div
@@ -193,7 +201,7 @@ tileView model lost x y =
     else
       unexploredTileView lost (x, y)
 
-exploredTileView: Int -> Html Msg
+exploredTileView : Int -> Html Msg
 exploredTileView df =
   div
     [ style
@@ -207,7 +215,7 @@ exploredTileView df =
         text (toString (df))
     ]
 
-exploredBombView: Bool -> Html Msg
+exploredBombView : Bool -> Html Msg
 exploredBombView exploded =
   div
     [ style
@@ -221,7 +229,7 @@ exploredBombView exploded =
     ]
     [ text "*" ]
 
-flaggedTileView: Bool -> TileLocation -> Html Msg
+flaggedTileView : Bool -> TileLocation -> Html Msg
 flaggedTileView lost location =
   div
     ( [ style
@@ -237,7 +245,7 @@ flaggedTileView lost location =
     )
     [ ]
 
-unexploredTileView: Bool -> TileLocation -> Html Msg
+unexploredTileView : Bool -> TileLocation -> Html Msg
 unexploredTileView lost location =
   div
     ( [ style
@@ -283,7 +291,7 @@ resetButtonStyle =
   , ("padding", "4px")
   , ("border-radius", "2px")
   , ("position", "absolute")
-  , ("left", px (9 + squareSize * boardSize // 2))
+  , ("left", px (6 + squareSize * boardSize // 2))
   ]
 
 px : Int -> String
