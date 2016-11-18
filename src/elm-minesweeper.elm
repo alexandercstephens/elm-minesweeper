@@ -28,14 +28,15 @@ numBombs = 12
 squareSize : Int
 squareSize = 25
 
+type alias TileLocation = (Int, Int)
 type alias Model = 
   { time: Time
-  , bombs: List { x : Int, y : Int }
-  , explored: List { x : Int, y : Int }
+  , bombs: List TileLocation
+  , explored: List TileLocation
   }
 
-generateBomb : Int -> { x : Int, y : Int }
-generateBomb n = { x = n // boardSize, y = n % boardSize }
+generateBomb : Int -> TileLocation
+generateBomb n = (n // boardSize, n % boardSize)
 
 init : (Model, Cmd Msg)
 init =
@@ -51,7 +52,7 @@ init =
 
 -- UPDATE
 
-type Msg = GenerateBoard | InitBoard (List { x : Int, y : Int }) | Explore Int Int | Tick
+type Msg = GenerateBoard | InitBoard (List TileLocation) | Explore TileLocation | Tick
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -64,17 +65,15 @@ update msg model =
       , Cmd.none
       )
 
-    Explore x' y' ->
-      ( if (inCoordinateList x' y' model.explored) then
+    Explore location ->
+      ( if (location `List.member` model.explored) then
           model
         else
           { model |
             explored = model.explored ++
-              List.map
-              (\(x, y) -> {x=x, y=y})
-              (spacesToExplore [(x', y')] model.bombs model.explored)
+              (spacesToExplore [location] model.bombs model.explored)
           }
-      , if (inCoordinateList x' y' model.bombs) then
+      , if (location `List.member` model.bombs) then
           Cmd.none -- TODO lose
         else
           Cmd.none)
@@ -84,15 +83,9 @@ update msg model =
       , Cmd.none
       )
 
-
-
-inCoordinateList : Int -> Int -> List { a | x : Int, y : Int } -> Bool
-inCoordinateList x' y' coordinateList =
-  List.any (\{x, y} -> x==x' && y==y') coordinateList
-
 -- input: tuple
 -- output: list of tuples surrounding that tuple, within the board
-surroundingSpaces : (Int, Int) -> List (Int, Int)
+surroundingSpaces : TileLocation -> List TileLocation
 surroundingSpaces (x, y) =
   List.filter (\(x, y) -> (x >= 0) && (x < boardSize) && (y >= 0) && (y < boardSize))
     [ (x - 1, y - 1)
@@ -106,30 +99,30 @@ surroundingSpaces (x, y) =
     ]
 
 -- returns the number of bombs surrounding this coordinate
-dangerFactor : Int -> Int -> List { a | x: Int, y: Int } -> Int
-dangerFactor x y bombs =
+dangerFactor : TileLocation-> List TileLocation -> Int
+dangerFactor location bombs =
   List.length
     (List.filter
-      (\(x, y) -> inCoordinateList x y bombs)
-      (surroundingSpaces (x, y))
+      (\location -> location `List.member` bombs)
+      (surroundingSpaces location)
     )
 
-spacesToExplore : List (Int, Int) -> List { x: Int, y: Int } -> List { x: Int, y: Int } -> List (Int, Int)
+spacesToExplore : List TileLocation -> List TileLocation -> List TileLocation -> List TileLocation
 spacesToExplore toExplore bombs explored =
   case toExplore of
     [] -> []
-    ((x, y)::xys) ->
+    (location::locations) ->
       --if already explored, ignore
-      if inCoordinateList x y explored then
-          spacesToExplore xys bombs explored
+      if location `List.member` explored then
+          spacesToExplore locations bombs explored
 
       --if no surrounding bombs, explore and explore surrounding spaces too
-      else if dangerFactor x y bombs == 0 then
-          (x, y)::(spacesToExplore (xys ++ surroundingSpaces (x, y)) bombs ({x=x, y=y}::explored))
+      else if dangerFactor location bombs == 0 then
+          location::(spacesToExplore (locations ++ surroundingSpaces location) bombs (location::explored))
 
       --otherwise, just explore this space
       else
-          (x, y)::(spacesToExplore xys bombs ({x=x, y=y}::explored))
+          location::(spacesToExplore locations bombs (location::explored))
 
 
 -- SUBSCRIPTIONS
@@ -143,7 +136,7 @@ subscriptions model =
 view : Model -> Html Msg
 view model =
   let
-    lost = List.any (\{x, y} -> inCoordinateList x y model.bombs) model.explored
+    lost = List.any (\location -> location `List.member` model.bombs) model.explored
   in
     div []
       [ div
@@ -165,16 +158,16 @@ rowView model lost x =
   
 tileView : Model -> Bool -> Int -> Int -> Html Msg
 tileView model lost x y =
-  if (inCoordinateList x y model.explored) then
-    if inCoordinateList x y model.bombs then
+  if ((x, y) `List.member` model.explored) then
+    if (x, y) `List.member` model.bombs then
       exploredBombView True
     else
-      exploredTileView (dangerFactor x y model.bombs)
+      exploredTileView (dangerFactor (x, y) model.bombs)
   else
-    if inCoordinateList x y model.bombs && lost then
+    if (x, y) `List.member` model.bombs && lost then
       exploredBombView False
     else
-      unexploredTileView lost x y
+      unexploredTileView lost (x, y)
 
 exploredTileView: Int -> Html Msg
 exploredTileView df =
@@ -204,8 +197,8 @@ exploredBombView exploded =
     ]
     [ text "*" ]
 
-unexploredTileView: Bool -> Int -> Int -> Html Msg
-unexploredTileView lost x y =
+unexploredTileView: Bool -> TileLocation -> Html Msg
+unexploredTileView lost location =
   div
     ( [ style
         ( tileStyle
@@ -213,7 +206,7 @@ unexploredTileView lost x y =
         )
       ]
     ++ if not lost then
-        [onClick (Explore x y)]
+        [onClick (Explore location)]
       else
         []
     )
