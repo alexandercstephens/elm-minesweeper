@@ -1,7 +1,8 @@
 import Html exposing (Html, button, div, text, span)
 import Html.App as App
 import Html.Attributes exposing (style, class)
-import Html.Events exposing (onClick)
+import Html.Events exposing (onClick, onWithOptions)
+import Json.Decode as Json
 import Random
 import Time exposing (Time, second)
 
@@ -33,6 +34,7 @@ type alias Model =
   { time: Time
   , bombs: List TileLocation
   , explored: List TileLocation
+  , flagged: List TileLocation
   }
 
 generateBomb : Int -> TileLocation
@@ -43,6 +45,7 @@ init =
   ( { time = 0
     , bombs = []
     , explored = []
+    , flagged = []
     }
   , Random.generate InitBoard 
       (Random.list numBombs 
@@ -52,7 +55,7 @@ init =
 
 -- UPDATE
 
-type Msg = GenerateBoard | InitBoard (List TileLocation) | Explore TileLocation | Tick
+type Msg = GenerateBoard | InitBoard (List TileLocation) | Explore TileLocation | ToggleFlag TileLocation | Tick
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -77,6 +80,14 @@ update msg model =
           Cmd.none -- TODO lose
         else
           Cmd.none)
+
+    ToggleFlag location ->
+      ( if (location `List.member` model.flagged) then
+          { model | flagged = List.filter ((/=) location) model.flagged }
+        else
+          { model | flagged = model.flagged ++ [location] }
+      , Cmd.none
+      )
 
     Tick ->
       ( { model | time = model.time + 1 }
@@ -133,6 +144,14 @@ subscriptions model =
 
 -- VIEW
 
+onRightClick message =
+  onWithOptions
+    "contextmenu"
+    { stopPropagation = True
+    , preventDefault = True
+    }
+    (Json.succeed message)
+
 view : Model -> Html Msg
 view model =
   let
@@ -166,6 +185,8 @@ tileView model lost x y =
   else
     if (x, y) `List.member` model.bombs && lost then
       exploredBombView False
+    else if (x, y) `List.member` model.flagged then
+      flaggedTileView lost (x, y)
     else
       unexploredTileView lost (x, y)
 
@@ -197,6 +218,22 @@ exploredBombView exploded =
     ]
     [ text "*" ]
 
+flaggedTileView: Bool -> TileLocation -> Html Msg
+flaggedTileView lost location =
+  div
+    ( [ style
+        ( tileStyle
+        ++ unexploredStyle
+        )
+      , class "fa fa-flag"
+      ]
+    ++ if not lost then
+        [ onRightClick (ToggleFlag location) ]
+      else
+        []
+    )
+    [ ]
+
 unexploredTileView: Bool -> TileLocation -> Html Msg
 unexploredTileView lost location =
   div
@@ -206,7 +243,9 @@ unexploredTileView lost location =
         )
       ]
     ++ if not lost then
-        [onClick (Explore location)]
+        [ onClick (Explore location)
+        , onRightClick (ToggleFlag location)
+        ]
       else
         []
     )
@@ -219,6 +258,7 @@ tileStyle =
       , ("background-color", "gray")
       , ("vertical-align", "top")
       , ("text-align", "center")
+      , ("line-height", px squareSize)
       ]
     , square squareSize
     ]
