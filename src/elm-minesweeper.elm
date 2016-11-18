@@ -55,7 +55,12 @@ init =
 
 -- UPDATE
 
-type Msg = GenerateBoard | InitBoard (List TileLocation) | Explore TileLocation | ToggleFlag TileLocation | Tick
+type Msg =
+  GenerateBoard
+  | InitBoard (List TileLocation)
+  | Explore TileLocation
+  | ToggleFlag TileLocation
+  | Tick
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -79,7 +84,8 @@ update msg model =
       , if (location `List.member` model.bombs) then
           Cmd.none -- TODO lose
         else
-          Cmd.none)
+          Cmd.none
+      )
 
     ToggleFlag location ->
       ( if (location `List.member` model.flagged) then
