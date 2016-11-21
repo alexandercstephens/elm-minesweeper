@@ -61,7 +61,9 @@ type Msg =
   | InitBoard (List TileLocation)
   | Explore TileLocation
   | ToggleFlag TileLocation
+  | Chord TileLocation
   | Tick
+  | DoNothing
 
 update : Msg -> Model -> (Model, Cmd Msg)
 update msg model =
@@ -80,7 +82,7 @@ update msg model =
         else
           { model |
             explored = model.explored ++
-              (spacesToExplore [location] model.bombs model.explored)
+              (spacesToExplore model [location] model.explored)
           }
       , Cmd.none
       )
@@ -93,10 +95,24 @@ update msg model =
       , Cmd.none
       )
 
+    Chord location ->
+      ( if dangerFactor location model.bombs == dangerFactor location model.flagged then
+          { model |
+            explored = model.explored ++
+              (spacesToExplore model (surroundingSpaces location) model.explored)
+          }
+        else
+          model
+      , Cmd.none
+      )
+
     Tick ->
       ( { model | time = model.time + 1 }
       , Cmd.none
       )
+
+    DoNothing ->
+      ( model, Cmd.none )
 
 -- input: tuple
 -- output: list of tuples surrounding that tuple, within the board
@@ -122,22 +138,22 @@ dangerFactor location bombs =
       (surroundingSpaces location)
     )
 
-spacesToExplore : List TileLocation -> List TileLocation -> List TileLocation -> List TileLocation
-spacesToExplore toExplore bombs explored =
+spacesToExplore : Model -> List TileLocation -> List TileLocation -> List TileLocation
+spacesToExplore model toExplore explored =
   case toExplore of
     [] -> []
     (location::locations) ->
-      --if already explored, ignore
-      if location `List.member` explored then
-          spacesToExplore locations bombs explored
+      --if already explored or flagged, ignore
+      if location `List.member` explored || location `List.member` model.flagged then
+          spacesToExplore model locations explored
 
       --if no surrounding bombs, explore and explore surrounding spaces too
-      else if dangerFactor location bombs == 0 then
-          location::(spacesToExplore (locations ++ surroundingSpaces location) bombs (location::explored))
+      else if dangerFactor location model.bombs == 0 then
+          location::(spacesToExplore model (locations ++ surroundingSpaces location) (location::explored))
 
       --otherwise, just explore this space
       else
-          location::(spacesToExplore locations bombs (location::explored))
+          location::(spacesToExplore model locations (location::explored))
 
 
 -- SUBSCRIPTIONS
@@ -165,7 +181,8 @@ view model =
   let
     lost = List.any (\location -> location `List.member` model.bombs) model.explored
   in
-    div []
+    div
+      [ onRightClick DoNothing ]
       [ div
           [ style [("position", "absolute"), ("left", px 45), ("line-height", px 28)] ]
           [ text (toString (remainingBombCount model)) ]
@@ -192,7 +209,7 @@ tileView model lost x y =
     if (x, y) `List.member` model.bombs then
       exploredBombView True
     else
-      exploredTileView (dangerFactor (x, y) model.bombs)
+      exploredTileView (dangerFactor (x, y) model.bombs) (x, y)
   else
     if (x, y) `List.member` model.bombs && lost then
       exploredBombView False
@@ -201,13 +218,14 @@ tileView model lost x y =
     else
       unexploredTileView lost (x, y)
 
-exploredTileView : Int -> Html Msg
-exploredTileView df =
+exploredTileView : Int -> TileLocation -> Html Msg
+exploredTileView df location =
   div
     [ style
       ( tileStyle
       ++ exploredStyle
       )
+    , onClick (Chord location)
     ]
     [ if df == 0 then
         text ""
@@ -270,6 +288,8 @@ tileStyle =
       , ("vertical-align", "top")
       , ("text-align", "center")
       , ("line-height", px squareSize)
+      , ("cursor", "default")
+      , ("user-select", "none")
       ]
     , square squareSize
     ]
