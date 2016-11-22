@@ -156,10 +156,21 @@ spacesToExplore model toExplore explored =
 -- SUBSCRIPTIONS
 subscriptions : Model -> Sub Msg
 subscriptions model =
-  Time.every second (\_ -> Tick)
+  Time.every
+    second
+    ( \_ ->
+        case winState model of
+          Playing -> Tick
+          _ -> DoNothing
+    )
 
 
 -- VIEW
+
+type WinState =
+  Playing
+  | Won
+  | Lost
 
 onRightClick message =
   onWithOptions
@@ -173,10 +184,19 @@ remainingBombCount : Model -> Int
 remainingBombCount model =
   List.length model.bombs - List.length model.flagged
 
+winState : Model -> WinState
+winState model =
+  if List.any (\location -> location `List.member` model.bombs) model.explored then
+    Lost
+  else if List.length model.bombs + List.length model.explored == boardSize * boardSize then
+    Won
+  else
+    Playing
+
 view : Model -> Html Msg
 view model =
   let
-    lost = List.any (\location -> location `List.member` model.bombs) model.explored
+    state = winState model
   in
     div
       [ onRightClick DoNothing ]
@@ -188,32 +208,32 @@ view model =
           [ text (toString model.time) ]
       , div
           [ onClick GenerateBoard ]
-          [ button [ style resetButtonStyle, class (lost ? ("fa fa-frown-o", "fa fa-smile-o"))] [] ]
+          [ button [ style resetButtonStyle, class (resetButtonClass state) ] [] ]
       , div
           [ style [("position", "absolute"), ("left", px 20), ("top", px 40), ("overflow", "hidden")] ]
-          (List.map (rowView model lost) [0..(boardSize - 1)])
+          (List.map (rowView model state) [0..(boardSize - 1)])
       ]
 
-rowView : Model -> Bool -> Int -> Html Msg
-rowView model lost x =
+rowView : Model -> WinState -> Int -> Html Msg
+rowView model state x =
   div
     [ style [("height", px squareSize)] ]
-    (List.indexedMap (tileView model lost) (List.repeat boardSize x))
+    (List.indexedMap (tileView model state) (List.repeat boardSize x))
   
-tileView : Model -> Bool -> Int -> Int -> Html Msg
-tileView model lost x y =
+tileView : Model -> WinState -> Int -> Int -> Html Msg
+tileView model state x y =
   if ((x, y) `List.member` model.explored) then
     if (x, y) `List.member` model.bombs then
       exploredBombView True
     else
       exploredTileView (dangerFactor (x, y) model.bombs) (x, y)
   else
-    if (x, y) `List.member` model.bombs && lost then
+    if (x, y) `List.member` model.bombs && state == Lost then
       exploredBombView False
     else if (x, y) `List.member` model.flagged then
-      flaggedTileView lost (x, y)
+      flaggedTileView state (x, y)
     else
-      unexploredTileView lost (x, y)
+      unexploredTileView state (x, y)
 
 exploredTileView : Int -> TileLocation -> Html Msg
 exploredTileView df location =
@@ -244,8 +264,8 @@ exploredBombView exploded =
     ]
     [ text "*" ]
 
-flaggedTileView : Bool -> TileLocation -> Html Msg
-flaggedTileView lost location =
+flaggedTileView : WinState -> TileLocation -> Html Msg
+flaggedTileView state location =
   div
     ( [ style
         ( tileStyle
@@ -253,22 +273,22 @@ flaggedTileView lost location =
         )
       , class "fa fa-flag"
       ]
-    ++ if not lost then
+    ++ if state == Playing then
         [ onRightClick (ToggleFlag location) ]
       else
         []
     )
     [ ]
 
-unexploredTileView : Bool -> TileLocation -> Html Msg
-unexploredTileView lost location =
+unexploredTileView : WinState -> TileLocation -> Html Msg
+unexploredTileView state location =
   div
     ( [ style
         ( tileStyle
         ++ unexploredStyle
         )
       ]
-    ++ if not lost then
+    ++ if state == Playing then
         [ onClick (Explore location)
         , onRightClick (ToggleFlag location)
         ]
@@ -310,6 +330,13 @@ resetButtonStyle =
   , ("position", "absolute")
   , ("left", px (6 + squareSize * boardSize // 2))
   ]
+
+resetButtonClass : WinState -> String
+resetButtonClass winState =
+  case winState of
+    Playing -> "fa fa-meh-o"
+    Won -> "fa fa-smile-o"
+    Lost -> "fa fa-frown-o"
 
 px : Int -> String
 px x = (toString x) ++ "px"
