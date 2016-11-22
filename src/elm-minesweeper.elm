@@ -77,13 +77,10 @@ update msg model =
       )
 
     Explore location ->
-      ( if (location `List.member` model.explored) then
-          model
-        else
-          { model |
-            explored = model.explored ++
-              (spacesToExplore model [location] model.explored)
-          }
+      ( { model |
+          explored = model.explored ++
+            (spacesToExplore model [location] model.explored)
+        }
       , Cmd.none
       )
 
