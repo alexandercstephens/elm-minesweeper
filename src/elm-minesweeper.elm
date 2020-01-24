@@ -48,10 +48,10 @@ init =
     , explored = []
     , flagged = []
     }
-  , Random.generate InitBoard 
-      (Random.list numBombs 
-        (Random.map generateBomb 
-          (Random.int 1 (boardSize*boardSize)))))
+  , Random.generate InitBoard
+      (Random.list numBombs
+        (Random.map generateBomb
+          (Random.int 0 (boardSize*boardSize - 1)))))
 
 
 -- UPDATE
@@ -288,6 +288,10 @@ unexploredTileView state location =
         ++ unexploredStyle
         )
       ]
+    ++ if state == Won then
+        [ class "fa fa-flag" ]
+      else
+        []
     ++ if state == Playing then
         [ onClick (Explore location)
         , onRightClick (ToggleFlag location)
